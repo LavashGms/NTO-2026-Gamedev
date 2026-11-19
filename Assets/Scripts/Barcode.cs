@@ -12,5 +12,5 @@ public class Barcode : MonoBehaviour
 
 public interface IBarcodeActivable
 {
-    void Activate();
+    bool Activate(StoreCheckout register);
 }

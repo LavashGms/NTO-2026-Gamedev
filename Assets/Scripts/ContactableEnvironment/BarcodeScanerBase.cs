@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class BarcodeScanerBase : MonoBehaviour, IPickable
 {
+    [SerializeField] private StoreCheckout storeCheckout;
     [SerializeField] private Transform scanner;
     [SerializeField] private Transform scanLine;
 
@@ -64,7 +65,7 @@ public class BarcodeScanerBase : MonoBehaviour, IPickable
                 {
                     if (barcodeActivable == scanningObject)
                     {
-                        barcodeActivable.Activate();
+                        barcodeActivable.Activate(storeCheckout);
                         break;
                     }
                 }

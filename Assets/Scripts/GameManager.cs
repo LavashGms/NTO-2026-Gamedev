@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int playerSpeed;
     [SerializeField] private GameObject moveTargetParticles;
 
-    private IPickable pickedItem;
+    public IPickable pickedItem { get; private set; }
     void Awake()
     {
         if (singleton == null) singleton = this;

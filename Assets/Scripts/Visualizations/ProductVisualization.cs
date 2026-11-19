@@ -6,28 +6,50 @@ public class ProductVisualization : MonoBehaviour, IBarcodeActivable, IPickable
 {
     [SerializeField] SpriteRenderer spriteRenderer;
     [SerializeField] private int barCodesCount;
+    public Product product { get; private set; }
 
     private BasketVisualization basket;
-    public Product product { get; private set; }
+    [NonSerialized] public bool placedToBasket;
+
     public Transform targetTransform => transform;
     private int pickupLayer;
     public int PickupLayer { get => pickupLayer; }
 
-    public void Set(Product product, BasketVisualization basket, int pickupLayer = 0)
+    public void Set(Product product, BasketVisualization basket)
     {
         this.product = product;
         this.basket = basket;
-        this.pickupLayer = pickupLayer;
         spriteRenderer.sprite = product.sprite;
     }
 
-    public void Activate()
+    public bool Activate(StoreCheckout register)
     {
-        Destroy(gameObject);
-        basket.RemoveProduct(product);
+        if (placedToBasket) return false;
+        register.RegisterPurchasingProduct(product);
+        return true;
     }
 
-    public void SetSortingLevel(int level) => spriteRenderer.sortingOrder = level;
+    public void SetPickingLevel(int pickupLayer)
+    {
+        spriteRenderer.sortingOrder = pickupLayer;
+        this.pickupLayer = pickupLayer;
+    }
+
+    public void Pick() => placedToBasket = false;
+    public IPickable Drop()
+    {
+        if (InBasket()) basket.PlaceProduct(this);
+        return null;
+    }
+    private bool InBasket()
+    {
+        foreach (RaycastHit2D hit in Physics2D.RaycastAll(transform.position, Vector2.zero))
+        {
+            if (hit.transform.gameObject.TryGetComponent<BasketVisualization>(out BasketVisualization vis) && vis == basket)
+                return true;
+        }
+        return false;
+    }
 }
 
 [Serializable]
@@ -37,8 +59,8 @@ public class Product
     [field: SerializeField] public int Price { get; private set; }
     [field: SerializeField] public int Weight { get; private set; }
     [field: SerializeField] public Sprite sprite { get; private set; }
+    public string StringFormat { get => $"{Name} {Weight}г {Price}руб."; }
     [SerializeField] public List<Vector3> availableBarcodePositions;
-
     public Product() { }
     public Product(string name, int price)
     {

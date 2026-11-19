@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class BasketVisualization : MonoBehaviour
 {
@@ -11,29 +12,37 @@ public class BasketVisualization : MonoBehaviour
     {
         this.basket = basket;
         this.checkout = checkout;
-        for (int i = 0; i < basket.products.Count; i++)
+        int counter = 0;
+        foreach (Product product in basket)
         {
             GameObject visualization = Instantiate(productVisualizationPrefab, transform);
-            visualization.transform.localPosition = new Vector3(Random.Range(-productpositionRange.x, productpositionRange.x), Random.Range(-productpositionRange.y, productpositionRange.y), transform.position.z);
             visualization.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0, 360));
-            visualization.GetComponent<ProductVisualization>().Set(basket.products[i], this, i);
-            visualization.GetComponent<ProductVisualization>().SetSortingLevel(i + 4);
+            ProductVisualization visScript = visualization.GetComponent<ProductVisualization>();
+            PlaceProduct(visScript);
+            visScript.Set(product, this);
+            visScript.SetPickingLevel(counter + 4);
+            counter++;
         }
     }
 
-    public void RemoveProduct(Product product)
+    public void PlaceProduct(ProductVisualization product)
     {
-        basket.products.Remove(product);
-        if (basket.products.Count == 0)
-            checkout.RemoveBasket();
+        product.transform.localPosition = new Vector3(Random.Range(-productpositionRange.x, productpositionRange.x), Random.Range(-productpositionRange.y, productpositionRange.y), transform.position.z);
+        product.placedToBasket = true;
     }
 }
 
 public class Basket
 {
-    public List<Product> products = new List<Product>();
+    private List<Product> products = new List<Product>();
+    public int ProductCount { get => products.Count; }
     public int Price { get; private set; }
-    public void Clear() => products.Clear();
+    public void Clear()
+    {
+        products.Clear();
+        Price = 0;
+    }
+
     public Basket(int productCount)
     {
         for (int i = 0; i < productCount; i++)
@@ -42,4 +51,5 @@ public class Basket
             Price += products[^1].Price;
         }
     }
+    public IEnumerator<Product> GetEnumerator() => products.GetEnumerator();
 }
