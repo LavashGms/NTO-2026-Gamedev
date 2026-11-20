@@ -27,11 +27,7 @@ public class StoreCheckout : MonoBehaviour
     [SerializeField] private Vector2 zoomCoordinates;
     private bool zoomed;
 
-    private void Start()
-    {
-        ActivateProductList(false);
-        AddBasket(new Basket(UnityEngine.Random.Range(2, 4)));
-    }
+    private void Start() => ActivateProductList(false);
 
     private void OnMouseDown()
     {
@@ -54,6 +50,7 @@ public class StoreCheckout : MonoBehaviour
     public void AddBasket(Basket basket)
     {
         if (currentBasket != null) throw new Exception("basket already setted");
+        GameManager.singleton.currentClientBasket = basket;
         GameObject visualization = Instantiate(basketVisualizationPrefab, transform);
         visualization.transform.localPosition = new Vector3(UnityEngine.Random.Range(minBasketPosition.x, maxBasketPosition.x), UnityEngine.Random.Range(minBasketPosition.y, maxBasketPosition.y), transform.position.z);
         visualization.transform.rotation = Quaternion.Euler(0, 0, UnityEngine.Random.Range(-basketZRotationDiapason, basketZRotationDiapason));
@@ -62,30 +59,37 @@ public class StoreCheckout : MonoBehaviour
         ActivateProductList(true);
     }
 
-    public void RemoveBasket()
+    public void ConfirmPurchase()
     {
+        if (currentBasket.basket.ProductCount == 0) return;
         ActivateProductList(false);
+        GameManager.singleton.PurchaseConfirmed(productListBacket);
+        productListBacket.Clear();
         Destroy(currentBasket.gameObject);
-        StartCoroutine(NextClient());
-    }
-
-    private IEnumerator NextClient()
-    {
-        yield return new WaitForSecondsRealtime(UnityEngine.Random.Range(1, 3));
-        AddBasket(new Basket(UnityEngine.Random.Range(3, 6)));
     }
 
     private void ActivateProductList(bool activate)
     {
-        productListBacket.Clear();
         foreach (Transform child in registerLogList)
             Destroy(child.gameObject);
         cashRegister.SetActive(activate);
     }
     public void RegisterPurchasingProduct(Product product)
     {
+        productListBacket.AddProduct(product);
+        foreach (Transform child in registerLogList)
+        {
+            if (child.TryGetComponent(out PurchaseLog logScript))
+            {
+                if (logScript.ProductEquals(product))
+                {
+                    logScript.Add();
+                    return;
+                }
+            }
+        }
         GameObject log = Instantiate(listLogPrefab, registerLogList.transform);
         log.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -logsDistance * (registerLogList.childCount - 1));
-        log.GetComponent<TextMeshProUGUI>().text = product.StringFormat + " 1רע";
+        log.GetComponent<PurchaseLog>().Set(product);
     }
 }

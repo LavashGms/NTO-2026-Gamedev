@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 
 public class BasketVisualization : MonoBehaviour
 {
@@ -34,22 +33,65 @@ public class BasketVisualization : MonoBehaviour
 
 public class Basket
 {
-    private List<Product> products = new List<Product>();
+    private Dictionary<Product, int> products = new Dictionary<Product, int>();
     public int ProductCount { get => products.Count; }
     public int Price { get; private set; }
+    public void AddProduct(Product product)
+    {
+        if (products.ContainsKey(product))
+            products[product] += 1;
+        else
+            products.Add(product, 1);
+        Price += product.Price;
+    }
     public void Clear()
     {
         products.Clear();
         Price = 0;
     }
-
     public Basket(int productCount)
     {
         for (int i = 0; i < productCount; i++)
-        {
-            products.Add(ProductsStorage.singleton.GetRandomProduct());
-            Price += products[^1].Price;
-        }
+            AddProduct(ProductsStorage.singleton.GetRandomProduct());
     }
-    public IEnumerator<Product> GetEnumerator() => products.GetEnumerator();
+    private List<Product> GetProducts()
+    {
+        List<Product> result = new List<Product>();
+        foreach (var kvp in products)
+        {
+            for (int i = 0; i < kvp.Value; i++)
+                result.Add(kvp.Key);
+        }
+        return result;
+    }
+    public IEnumerator<Product> GetEnumerator() => GetProducts().GetEnumerator();
+    public bool SameWith(Basket basket)
+    {
+        foreach (var kvp in basket.products)
+        {
+            if (!products.TryGetValue(kvp.Key, out int count)) return false;
+            else if (count != kvp.Value) return false;
+        }
+        foreach (var kvp in products)
+        {
+            if (!basket.products.TryGetValue(kvp.Key, out int count)) return false;
+        }
+        return true;
+    }
+    public int GetDifference(Basket basket)
+    {
+        int difference = 0;
+        foreach (var kvp in basket.products)
+        {
+            if (!products.TryGetValue(kvp.Key, out int count))
+                difference += kvp.Key.Price * kvp.Value;
+            else if (count != kvp.Value)
+                difference += kvp.Key.Price * System.Math.Abs(count - kvp.Value);
+        }
+        foreach (var kvp in products)
+        {
+            if (!basket.products.TryGetValue(kvp.Key, out int count)) difference += kvp.Key.Price * kvp.Value;
+        }
+        return difference;
+    }
 }
